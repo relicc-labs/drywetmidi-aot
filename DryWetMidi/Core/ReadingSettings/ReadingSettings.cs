@@ -321,9 +321,8 @@ namespace Melanchall.DryWetMidi.Core
         /// Gets or sets collection of custom chunks types.
         /// </summary>
         /// <remarks>
-        /// <para>Types within this collection must be derived from the <see cref="MidiChunk"/>
-        /// class and have parameterless constructor. No exception will be thrown if some types don't meet
-        /// these requirements.</para>
+        /// <para>A custom chunk read from a file must be registered with an explicit reading factory.
+        /// Type-only registrations can identify custom chunks while writing but cannot construct them while reading.</para>
         /// </remarks>
         public ChunkTypesCollection CustomChunkTypes { get; set; }
 
@@ -331,9 +330,8 @@ namespace Melanchall.DryWetMidi.Core
         /// Gets or sets collection of custom meta events types.
         /// </summary>
         /// <remarks>
-        /// <para>Types within this collection must be derived from the <see cref="MetaEvent"/>
-        /// class and have parameterless constructor. No exception will be thrown
-        /// if some types don't meet these requirements.</para>
+        /// <para>A custom meta event read from a file must be registered with an explicit reading factory.
+        /// Type-only registrations can identify custom events while writing but cannot construct them while reading.</para>
         /// </remarks>
         public EventTypesCollection CustomMetaEventTypes { get; set; }
 

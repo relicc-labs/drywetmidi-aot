@@ -30,17 +30,11 @@ namespace Melanchall.DryWetMidi.Core
 
         public static MidiChunk TryCreateChunk(string chunkId, ChunkTypesCollection chunksTypes)
         {
-            Type type = null;
-            return chunksTypes?.TryGetType(chunkId, out type) == true && IsChunkType(type)
-                ? (MidiChunk)Activator.CreateInstance(type)
-                : null;
-        }
+            if (chunksTypes == null)
+                return null;
 
-        private static bool IsChunkType(Type type)
-        {
-            return type != null &&
-                   type.IsSubclassOf(typeof(MidiChunk)) &&
-                   type.GetConstructor(Type.EmptyTypes) != null;
+            MidiChunk chunk;
+            return chunksTypes.TryCreate(chunkId, out chunk) ? chunk : null;
         }
 
         #endregion

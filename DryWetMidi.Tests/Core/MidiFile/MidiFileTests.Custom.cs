@@ -178,7 +178,7 @@ namespace Melanchall.DryWetMidi.Tests.Core
 
             var customMetaEventTypes = new EventTypesCollection
             {
-                { typeof(CustomMetaEvent), 0x5A }
+                { 0x5A, () => new CustomMetaEvent() }
             };
 
             var writingSettings = new WritingSettings { CustomMetaEventTypes = customMetaEventTypes };
@@ -212,7 +212,7 @@ namespace Melanchall.DryWetMidi.Tests.Core
 
             var customChunkTypes = new ChunkTypesCollection
             {
-                { typeof(CustomChunk), CustomChunk.Id }
+                { CustomChunk.Id, () => new CustomChunk() }
             };
 
             var readingSettings = new ReadingSettings { CustomChunkTypes = customChunkTypes };
@@ -266,6 +266,114 @@ namespace Melanchall.DryWetMidi.Tests.Core
                 expectedB.Length +
                 1;
             ClassicAssert.AreEqual(expectedBytesCount, unknownChunk.Data.Length, "Unknown chunk data length is invalid.");
+        }
+
+        [Test]
+        public void ReadCustomMetaEvent_TypeOnlyRegistration()
+        {
+            var customMetaEventTypes = new EventTypesCollection
+            {
+                { typeof(CustomMetaEvent), 0x5A }
+            };
+
+            var exception = ClassicAssert.Throws<System.InvalidOperationException>(() => MidiFileTestUtilities.Read(
+                new MidiFile(new TrackChunk(new CustomMetaEvent())),
+                new WritingSettings { CustomMetaEventTypes = customMetaEventTypes },
+                new ReadingSettings { CustomMetaEventTypes = customMetaEventTypes }));
+
+            StringAssert.Contains("has no reading factory", exception.Message);
+        }
+
+        [Test]
+        public void ReadCustomChunk_TypeOnlyRegistration()
+        {
+            var customChunkTypes = new ChunkTypesCollection
+            {
+                { typeof(CustomChunk), CustomChunk.Id }
+            };
+
+            var exception = ClassicAssert.Throws<System.InvalidOperationException>(() => MidiFileTestUtilities.Read(
+                new MidiFile(new CustomChunk()),
+                null,
+                new ReadingSettings { CustomChunkTypes = customChunkTypes }));
+
+            StringAssert.Contains("has no reading factory", exception.Message);
+        }
+
+        [Test]
+        public void RegisterCustomMetaEventFactory_NullFactory()
+        {
+            var customMetaEventTypes = new EventTypesCollection();
+
+            ClassicAssert.Throws<System.ArgumentNullException>(() =>
+                customMetaEventTypes.Add<CustomMetaEvent>(0x5A, null));
+        }
+
+        [Test]
+        public void RegisterCustomChunkFactory_NullFactory()
+        {
+            var customChunkTypes = new ChunkTypesCollection();
+
+            ClassicAssert.Throws<System.ArgumentNullException>(() =>
+                customChunkTypes.Add<CustomChunk>(CustomChunk.Id, null));
+        }
+
+        [Test]
+        public void ReadCustomMetaEvent_NullFactoryResult()
+        {
+            var writingTypes = new EventTypesCollection
+            {
+                { typeof(CustomMetaEvent), 0x5A }
+            };
+            var readingTypes = new EventTypesCollection();
+            readingTypes.Add<CustomMetaEvent>(0x5A, () => null);
+
+            var exception = ClassicAssert.Throws<System.InvalidOperationException>(() => MidiFileTestUtilities.Read(
+                new MidiFile(new TrackChunk(new CustomMetaEvent())),
+                new WritingSettings { CustomMetaEventTypes = writingTypes },
+                new ReadingSettings { CustomMetaEventTypes = readingTypes }));
+
+            StringAssert.Contains("returned null", exception.Message);
+        }
+
+        [Test]
+        public void ReadCustomChunk_NullFactoryResult()
+        {
+            var writingTypes = new ChunkTypesCollection
+            {
+                { typeof(CustomChunk), CustomChunk.Id }
+            };
+            var readingTypes = new ChunkTypesCollection();
+            readingTypes.Add<CustomChunk>(CustomChunk.Id, () => null);
+
+            var exception = ClassicAssert.Throws<System.InvalidOperationException>(() => MidiFileTestUtilities.Read(
+                new MidiFile(new CustomChunk()),
+                null,
+                new ReadingSettings { CustomChunkTypes = readingTypes }));
+
+            StringAssert.Contains("returned null", exception.Message);
+        }
+
+        [Test]
+        public void RegisterCustomMetaEventFactory_PreservesTypeMapping()
+        {
+            var customMetaEventTypes = new EventTypesCollection();
+            customMetaEventTypes.Add(0x5A, () => new CustomMetaEvent());
+
+            var eventType = customMetaEventTypes.Single();
+            ClassicAssert.AreEqual(typeof(CustomMetaEvent), eventType.Type);
+            ClassicAssert.AreEqual(0x5A, eventType.StatusByte);
+        }
+
+        [Test]
+        public void RegisterCustomChunkFactory_PreservesTypeMapping()
+        {
+            var customChunkTypes = new ChunkTypesCollection();
+            customChunkTypes.Add(CustomChunk.Id, () => new CustomChunk());
+
+            var chunkType = customChunkTypes.Single();
+            ClassicAssert.AreEqual(typeof(CustomChunk), chunkType.Type);
+            ClassicAssert.AreEqual(CustomChunk.Id, chunkType.Id);
         }
 
         #endregion

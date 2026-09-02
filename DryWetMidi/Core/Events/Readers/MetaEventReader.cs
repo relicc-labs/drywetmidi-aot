@@ -73,9 +73,10 @@ namespace Melanchall.DryWetMidi.Core
                     break;
                 default:
                     {
-                        Type eventType = null;
-                        metaEvent = settings.CustomMetaEventTypes?.TryGetType(statusByte, out eventType) == true && IsMetaEventType(eventType)
-                            ? (MetaEvent)Activator.CreateInstance(eventType)
+                        MetaEvent customMetaEvent;
+                        metaEvent = settings.CustomMetaEventTypes != null &&
+                                    settings.CustomMetaEventTypes.TryCreate(statusByte, out customMetaEvent)
+                            ? customMetaEvent
                             : new UnknownMetaEvent(statusByte);
                     }
                     break;
@@ -93,18 +94,6 @@ namespace Melanchall.DryWetMidi.Core
 
             return metaEvent;
         }
-
-        #endregion
-
-        #region Methods
-
-        private static bool IsMetaEventType(Type type)
-        {
-            return type != null &&
-                   type.IsSubclassOf(typeof(MetaEvent)) &&
-                   type.GetConstructor(Type.EmptyTypes) != null;
-        }
-
         #endregion
     }
 }

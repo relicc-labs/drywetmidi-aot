@@ -405,10 +405,7 @@ namespace Melanchall.DryWetMidi.Tests.Core
             expectedChunks: new[] { new CustomChunk(1, "A", 2) },
             readingSettings: new ReadingSettings
             {
-                CustomChunkTypes = new ChunkTypesCollection
-                {
-                    { typeof(CustomChunk), CustomChunk.Id }
-                }
+                CustomChunkTypes = CreateCustomChunkTypes()
             });
 
         [Test]
@@ -508,10 +505,7 @@ namespace Melanchall.DryWetMidi.Tests.Core
             {
                 SilentNoteOnPolicy = SilentNoteOnPolicy.NoteOn,
                 ZeroLengthDataPolicy = ZeroLengthDataPolicy.ReadAsNull,
-                CustomChunkTypes = new ChunkTypesCollection
-                {
-                    { typeof(CustomChunk), CustomChunk.Id }
-                }
+                CustomChunkTypes = CreateCustomChunkTypes()
             });
 
         [Test]
@@ -775,10 +769,7 @@ namespace Melanchall.DryWetMidi.Tests.Core
             expectedChunks: new[] { new CustomChunk(1, "A", 2) },
             readingSettings: new ReadingSettings
             {
-                CustomChunkTypes = new ChunkTypesCollection
-                {
-                    { typeof(CustomChunk), CustomChunk.Id }
-                }
+                CustomChunkTypes = CreateCustomChunkTypes()
             });
 
         [Test]
@@ -867,10 +858,7 @@ namespace Melanchall.DryWetMidi.Tests.Core
             {
                 SilentNoteOnPolicy = SilentNoteOnPolicy.NoteOn,
                 ZeroLengthDataPolicy = ZeroLengthDataPolicy.ReadAsNull,
-                CustomChunkTypes = new ChunkTypesCollection
-                {
-                    { typeof(CustomChunk), CustomChunk.Id }
-                }
+                CustomChunkTypes = CreateCustomChunkTypes()
             });
 
         [Test]
@@ -905,15 +893,19 @@ namespace Melanchall.DryWetMidi.Tests.Core
             {
                 SilentNoteOnPolicy = SilentNoteOnPolicy.NoteOn,
                 ZeroLengthDataPolicy = ZeroLengthDataPolicy.ReadAsNull,
-                CustomChunkTypes = new ChunkTypesCollection
-                {
-                    { typeof(CustomChunk), CustomChunk.Id }
-                }
+                CustomChunkTypes = CreateCustomChunkTypes()
             });
 
         #endregion
 
         #region Private methods
+
+        private static ChunkTypesCollection CreateCustomChunkTypes()
+        {
+            var result = new ChunkTypesCollection();
+            result.Add(CustomChunk.Id, () => new CustomChunk());
+            return result;
+        }
 
         private void CheckWritingWithFormat_MultiSequence(
             IEnumerable<MidiChunk> chunks,

@@ -12,6 +12,7 @@ namespace Melanchall.DryWetMidi.Core
     {
         #region Fields
 
+        private readonly Dictionary<byte, Func<MetaEvent>> _factories = new Dictionary<byte, Func<MetaEvent>>();
         private readonly Dictionary<Type, byte> _statusBytes = new Dictionary<Type, byte>();
         private readonly Dictionary<byte, Type> _types = new Dictionary<byte, Type>();
 
@@ -31,6 +32,25 @@ namespace Melanchall.DryWetMidi.Core
         {
             _statusBytes.Add(type, statusByte);
             _types.Add(statusByte, type);
+        }
+
+        /// <summary>
+        /// Adds an event type, its corresponding status byte, and the factory used to create it while reading.
+        /// </summary>
+        /// <typeparam name="TEvent">Type of meta event.</typeparam>
+        /// <param name="statusByte">Status byte of event.</param>
+        /// <param name="factory">Factory that creates an event before its content is read.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="factory"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Event type specified by <typeparamref name="TEvent"/> or
+        /// <paramref name="statusByte"/> already exists in this collection.</exception>
+        public void Add<TEvent>(byte statusByte, Func<TEvent> factory)
+            where TEvent : MetaEvent
+        {
+            if (factory == null)
+                throw new ArgumentNullException(nameof(factory));
+
+            Add(typeof(TEvent), statusByte);
+            _factories.Add(statusByte, factory);
         }
 
         /// <summary>
@@ -59,6 +79,34 @@ namespace Melanchall.DryWetMidi.Core
         public bool TryGetStatusByte(Type type, out byte statusByte)
         {
             return _statusBytes.TryGetValue(type, out statusByte);
+        }
+
+        /// <summary>
+        /// Creates the custom meta event registered for reading with the specified status byte.
+        /// </summary>
+        /// <param name="statusByte">Status byte of the event to create.</param>
+        /// <param name="midiEvent">The created event, or <c>null</c> when the status byte is not registered.</param>
+        /// <returns><c>true</c> when the status byte is registered; otherwise, <c>false</c>.</returns>
+        /// <exception cref="InvalidOperationException">The status byte has no reading factory, or its factory
+        /// returned <c>null</c>.</exception>
+        internal bool TryCreate(byte statusByte, out MetaEvent midiEvent)
+        {
+            Type type;
+            if (!_types.TryGetValue(statusByte, out type))
+            {
+                midiEvent = null;
+                return false;
+            }
+
+            Func<MetaEvent> factory;
+            if (!_factories.TryGetValue(statusByte, out factory))
+                throw new InvalidOperationException($"Custom meta event type '{type}' has no reading factory.");
+
+            midiEvent = factory();
+            if (midiEvent == null)
+                throw new InvalidOperationException($"The reading factory for custom meta event type '{type}' returned null.");
+
+            return true;
         }
 
         #endregion

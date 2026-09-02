@@ -207,7 +207,7 @@ var fileWithHistoryChunk = MidiFile.Read(
     {
         CustomChunkTypes = new ChunkTypesCollection
         {
-            { typeof(HistoryChunk), "Hstr" }
+            { "Hstr", () => new HistoryChunk() }
         }
     });
 

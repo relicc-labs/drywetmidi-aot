@@ -119,7 +119,7 @@ The custom meta event is completely implemented. In order to read and write it w
 
 var customMetaEventTypes = new EventTypesCollection
 {
-    { typeof(ImageEvent), 0x5F }
+    { 0x5F, () => new ImageEvent() }
 };
 
 // Write an image event to an existing file.

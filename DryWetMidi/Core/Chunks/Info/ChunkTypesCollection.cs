@@ -12,6 +12,7 @@ namespace Melanchall.DryWetMidi.Core
     {
         #region Fields
 
+        private readonly Dictionary<string, Func<MidiChunk>> _factories = new Dictionary<string, Func<MidiChunk>>();
         private readonly Dictionary<Type, string> _ids = new Dictionary<Type, string>();
         private readonly Dictionary<string, Type> _types = new Dictionary<string, Type>();
 
@@ -44,6 +45,26 @@ namespace Melanchall.DryWetMidi.Core
         }
 
         /// <summary>
+        /// Adds a chunk type, its corresponding ID, and the factory used to create it while reading.
+        /// </summary>
+        /// <typeparam name="TChunk">Type of chunk.</typeparam>
+        /// <param name="id">ID of chunk.</param>
+        /// <param name="factory">Factory that creates a chunk before its content is read.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="id"/> or <paramref name="factory"/> is
+        /// <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Chunk type specified by <typeparamref name="TChunk"/> or
+        /// <paramref name="id"/> already exists in this collection.</exception>
+        public void Add<TChunk>(string id, Func<TChunk> factory)
+            where TChunk : MidiChunk
+        {
+            if (factory == null)
+                throw new ArgumentNullException(nameof(factory));
+
+            Add(typeof(TChunk), id);
+            _factories.Add(id, factory);
+        }
+
+        /// <summary>
         /// Gets the chunk type associated with the specified ID.
         /// </summary>
         /// <param name="id">ID of the chunk type to get.</param>
@@ -68,6 +89,34 @@ namespace Melanchall.DryWetMidi.Core
         public bool TryGetId(Type type, out string id)
         {
             return _ids.TryGetValue(type, out id);
+        }
+
+        /// <summary>
+        /// Creates the custom chunk registered for reading with the specified ID.
+        /// </summary>
+        /// <param name="id">ID of the chunk to create.</param>
+        /// <param name="chunk">The created chunk, or <c>null</c> when the ID is not registered.</param>
+        /// <returns><c>true</c> when the ID is registered; otherwise, <c>false</c>.</returns>
+        /// <exception cref="InvalidOperationException">The ID has no reading factory, or its factory returned
+        /// <c>null</c>.</exception>
+        internal bool TryCreate(string id, out MidiChunk chunk)
+        {
+            Type type;
+            if (!_types.TryGetValue(id, out type))
+            {
+                chunk = null;
+                return false;
+            }
+
+            Func<MidiChunk> factory;
+            if (!_factories.TryGetValue(id, out factory))
+                throw new InvalidOperationException($"Custom chunk type '{type}' has no reading factory.");
+
+            chunk = factory();
+            if (chunk == null)
+                throw new InvalidOperationException($"The reading factory for custom chunk type '{type}' returned null.");
+
+            return true;
         }
 
         #endregion
